@@ -63,7 +63,7 @@ app.post('/register', async (req, res) => {
       [firstName, lastName, email, hashedPassword, employeeType, verificationToken]
     );
 
-    console.log('Pending user inserted with ID:', insertResult.insertId);
+   // console.log('Pending user inserted with ID:', insertResult.insertId);
     const emailHTML = `
   <div style="max-width: 600px; margin: auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 10px;">
     <div style="text-align: center;">
@@ -333,7 +333,7 @@ app.get('/employees', async (req, res) => {
 });
 app.put("/employees/:id", async (req, res) => {
   const { id } = req.params;
-  let { name, email, employeeType, designation, department, joiningDate,status,plOpeningBalance } = req.body;
+  let { name, email, employeeType, designation, department, joiningDate,status,plOpeningBalance,lastworkingDay } = req.body;
 
   if (!employeeType) {
     console.warn("Warning: employeeType is missing, defaulting to 'employee'");
@@ -352,13 +352,19 @@ app.put("/employees/:id", async (req, res) => {
     // Get a connection from the pool
     connection = await db.getConnection();
     await connection.beginTransaction(); // ✅ Correct way to start a transaction
-
+    const newJoiningYear = new Date(joiningDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (newJoiningYear === currentYear) {
+      await accruePL(); 
+      await accrueCL();// Trigger PL accrual
+    }
     // Update employees table
     const updateEmployeeQuery = `
       UPDATE employees 
-      SET name = ?, email = ?, employeetype = ?, designation = ?, department = ?, joiningDate = ?, status=?
+      SET name = ?, email = ?, employeetype = ?, designation = ?, department = ?, joiningDate = ?, status=?,lastworkingday=?
       WHERE id = ?
     `;
+
    const updatePLBalance=`UPDATE pl_balances SET balance=balance+? WHERE employeeId=?`;
    const [employeebalance]=await connection.execute(updatePLBalance,[plOpeningBalance,id]);
     const [employeeResult] = await connection.execute(updateEmployeeQuery, [
@@ -369,9 +375,11 @@ app.put("/employees/:id", async (req, res) => {
       department,
       joiningDate,
       status,
+      lastworkingDay,
       id,
     ]);
-
+   const empbalance=await connection.execute("SELECT balance from pl_balances WHERE employeeId=?",[id]);
+   await connection.execute("UPDATE pl_balances SET carryForward=? WHERE employeeId=?",[plOpeningBalance,id]);
     if (employeeResult.affectedRows === 0) {
       await connection.rollback();
       return res.status(404).json({ message: "Employee not found" });
@@ -671,6 +679,7 @@ app.put('/update-cl-balance/:employeeId', async (req, res) => {
     res.status(500).send('Failed to update CL balance');
   }
 });
+
 app.get('/get-balances/:employeeId', async (req, res) => {
   const { employeeId } = req.params;
 
@@ -683,11 +692,138 @@ app.get('/get-balances/:employeeId', async (req, res) => {
       'SELECT balance FROM pl_balances WHERE employeeId = ?',
       [employeeId]
     );
+    const [carryForwardBalance]=await db.query('SELECT carryForward FROM pl_balances WHERE employeeId = ?',
+      [employeeId])
+    const [usedCL]=await db.query("SELECT SUM(totalLeaveDays) AS usedCL FROM leaveHistory  WHERE type = 'CL' AND YEAR(startDate) = YEAR(CURDATE()) AND employeeId= ? AND status='Approved'",[employeeId]);
+    const [usedPL]=await db.query("SELECT SUM(totalLeaveDays) AS usedPL FROM leaveHistory  WHERE type = 'PL' AND YEAR(startDate) = YEAR(CURDATE()) AND employeeId= ? AND status='Approved'",[employeeId]);
+    {/*const currentDate = new Date();
+  const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1); 
+  firstDayOfYear.setDate(firstDayOfYear.getDate()+1);// January 1st of current year
+  const lastDayOfYear=new Date(currentDate.getFullYear(),11,31);
+  lastDayOfYear.setDate(lastDayOfYear.getDate()+1);
+  const [employeeCL]=await db.query(
+    `SELECT startDate, endDate, totalLeaveDays, startDayType, endDayType 
+     FROM leaveHistory 
+     WHERE employeeId = ? 
+     AND (startDate BETWEEN ? AND ? OR endDate BETWEEN ? AND ?) AND status='Approved' and type='CL'`,
+    [employeeId, firstDayOfYear, lastDayOfYear, firstDayOfYear, lastDayOfYear]
+  );
+    let usedCL=0;
+  if (employeeCL.length > 0) {
+    const publicHolidays = await getPublicHolidays(firstDayOfYear, lastDayOfYear);
 
+    employeeCL.forEach((leave) => {
+      const { startDate, endDate, totalLeaveDays, startDayType,endDayType } = leave;
+     if (startDate >= firstDayOfYear && endDate <= lastDayOfYear) {
+      console.log('enddate');
+      console.log(endDate);
+      console.log('lastday');
+      console.log(lastDayOfYear);
+        // Case 1: Leave starts and ends within the current month
+        usedCL += parseFloat(totalLeaveDays);
+        console.log('case 1 Triggered');
+
+      } else if (startDate>= firstDayOfYear && endDate >lastDayOfYear) {
+        // Case 2: Leave starts in the current month but extends into the next month
+        let count = 0;
+        console.log('case 2 Triggered');
+
+        // Count valid leave days between start of present month and end date
+        for (let d = new Date(startDate); d <= new Date(lastDayOfYear); d.setDate(d.getDate() + 1)) {
+          const formattedDate = d.toISOString().split("T")[0];
+          if (!isWeekday(d) && !publicHolidays.includes(formattedDate)) {
+            count += 1;
+          }
+        }
+
+        // Handle half-day case
+        if (startDayType === "Half Day") count -= 0.5;
+
+        usedCL += count;
+        
+      } else if (startDate< firstDayOfYear && endDate >= lastDayOfYear) {
+        // Case 3: Leave starts in previous month and ends in current month
+        let count = 0;
+        console.log('case 3 Triggered');
+
+        // Count valid leave days from the 1st of the current month to the end date
+   // Convert endUTC to local time properly
+   //console.log(endLocal); // Reset time to midnight in local time
+    for (let d = new Date(startUTC); d <= lastDayOfYear; d.setDate(d.getDate() + 1)) {
+    const formattedDate = d.toISOString().split("T")[0];
+    
+    if (!isWeekday(d) && !publicHolidays.includes(formattedDate)) {
+      count += 1;
+    }
+    }
+     // Handle half-day case on the end date
+    if (endDayType === "Half Day") {
+          count -= 0.5;
+        }
+        usedCL += count;
+      }
+    });
+  }
+  const [employeePL]=await db.query(
+    `SELECT startDate, endDate, totalLeaveDays, startDayType, endDayType 
+     FROM leaveHistory 
+     WHERE employeeId = ? 
+     AND (startDate BETWEEN ? AND ? OR endDate BETWEEN ? AND ?) AND status='Approved' and type='PL'`,
+    [employeeId, firstDayOfYear, lastDayOfYear, firstDayOfYear, lastDayOfYear]
+  );
+ let usedPL=0;
+ employeePL.forEach((leave) => {
+  const { startDate, endDate, totalLeaveDays} = leave;
+ if (startDate >= firstDayOfYear && endDate <= lastDayOfYear) {
+    // Case 1: Leave starts and ends within the current month
+    usedPL += parseFloat(totalLeaveDays);
+  } else if (startDate>= firstDayOfYear && endDate >lastDayOfYear) {
+    // Case 2: Leave starts in the current month but extends into the next month
+    let count = 0;
+
+    // Count valid leave days between start of present month and end date
+    for (let d = new Date(startDate); d <= new Date(lastDayOfYear); d.setDate(d.getDate() + 1)) {
+      const formattedDate = d.toISOString().split("T")[0];
+      if (!isWeekday(d) && !publicHolidays.includes(formattedDate)) {
+        count += 1;
+      }
+    }
+
+    // Handle half-day case
+
+    usedPL += count;
+    
+  } else if (startDate< firstDayOfYear && endDate >= lastDayOfYear) {
+    // Case 3: Leave starts in previous month and ends in current month
+    let count = 0;
+    // Count valid leave days from the 1st of the current month to the end date
+// Convert endUTC to local time properly
+//console.log(endLocal); // Reset time to midnight in local time
+for (let d = new Date(firstDayOfYear); d <= lastDayOfYear; d.setDate(d.getDate() + 1)) {
+const formattedDate = d.toISOString().split("T")[0];
+
+if (!isWeekday(d) && !publicHolidays.includes(formattedDate)) {
+  count += 1;
+}
+}
+ // Handle half-day case on the end date
+
+    usedPL += count;
+  }
+});*/}
+const [accruedCL]=await db.query("SELECT accruedcl FROM cl_balances WHERE employeeId=?",[employeeId]);
+const [accruedPL]=await db.query("SELECT accruedpl FROM pl_balances WHERE employeeId=?",[employeeId]);
+const [clentitlement]=await db.query("SELECT cl_entitlement FROM SETTINGS WHERE id=1");
     if (clBalanceResult.length > 0 && plBalanceResult.length > 0) {
       return res.json({
         clBalance: clBalanceResult[0].balance,
         plBalance: plBalanceResult[0].balance,
+        carryForwardPL:carryForwardBalance[0].carryForward,
+        usedCL:usedCL[0].usedCL||0,
+        usedPL:usedPL[0].usedPL||0,
+        accruedCL:accruedCL[0].accruedcl,
+        accruedPL:accruedPL[0].accruedpl,
+        clEntitlement:clentitlement[0].cl_entitlement,
       });
     } else {
       return res.status(404).json({ message: 'Balances not found for the user' });
@@ -742,7 +878,26 @@ app.get('/leave-balances', async (req, res) => {
         e.id AS employeeId, 
         e.name AS employeeName, 
         IFNULL(pl.balance, 0) AS plBalance, 
-        IFNULL(cl.balance, 0) AS clBalance
+        IFNULL(cl.balance, 0) AS clBalance,
+        IFNULL(pl.accruedpl, 0) AS accruedPL,
+        IFNULL((
+        SELECT SUM(lh.totalLeaveDays) 
+        FROM leaveHistory lh 
+        WHERE lh.employeeId = e.id 
+          AND lh.type = 'PL' 
+          AND YEAR(lh.startDate) = YEAR(CURDATE()) 
+          AND lh.status = 'Approved'
+    ), 0) AS usedPL,
+    IFNULL((
+        SELECT SUM(lh.totalLeaveDays) 
+        FROM leaveHistory lh 
+        WHERE lh.employeeId = e.id 
+          AND lh.type = 'CL' 
+          AND YEAR(lh.startDate) = YEAR(CURDATE()) 
+          AND lh.status = 'Approved'
+    ), 0) AS usedCL,
+        IFNULL(pl.carryForward, 0) AS carryForwardPL,
+        IFNULL(cl.accruedcl, 0) AS accruedCL
       FROM 
         employees e
       LEFT JOIN 
@@ -750,13 +905,35 @@ app.get('/leave-balances', async (req, res) => {
       LEFT JOIN 
         cl_balances cl ON e.id = cl.employeeId
     `);
-    
     res.json(results);
   } catch (err) {
     console.error('Error fetching leave balances:', err);
     res.status(500).json({ error: 'Error fetching leave balances' });
   }
 });
+app.put('/settings', async (req, res) => {
+  const { newClEntitlement } = req.body;
+
+  if (!newClEntitlement || isNaN(newClEntitlement) || newClEntitlement <= 0) {
+    return res.status(400).json({ message: "Invalid entitlement value." });
+  }
+
+  const query = "UPDATE settings SET cl_entitlement = ? WHERE id = 1";
+  db.query(query, [newClEntitlement], (err, results) => {
+    if (err) {
+      console.error("Error updating cl entitlement:", err);
+      return res.status(500).json({ message: "Internal server error." });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: "Settings record not found." });
+    }
+
+    // ✅ Send a response after a successful update
+    return res.status(200).json({ message: "CL Entitlement updated successfully!" });
+  });
+});
+
 function formatDate(date) {
   return new Date(date.setHours(0, 0, 0, 0));  // Set time to midnight
 }
@@ -794,6 +971,11 @@ async function calculateWorkingDays (startDate, endDate, db) {
  // console.log('Total working days:', workingDays);
   return workingDays;
 }
+
+const isWeekday = (date) => {
+  const day = new Date(date).getDay();
+  return day === 6 || day === 0; // Saturday or Sunday
+};
 const getPublicHolidays = async (startDate, endDate) => {
   const [holidays] = await db.query(
    `SELECT date, name FROM public_holidays WHERE date BETWEEN ? AND ?`,
@@ -801,18 +983,15 @@ const getPublicHolidays = async (startDate, endDate) => {
   );
   return holidays.map((holiday) => holiday.date.toISOString().split("T")[0]);
 };
-const isWeekday = (date) => {
-  const day = new Date(date).getDay();
-  return day === 6 || day === 0; // Saturday or Sunday
-};
 async function accruePL() {
   console.log("PL accrual process started...");
   try {
     const [employees] = await db.query("SELECT id, joiningDate FROM employees WHERE status = 'Active'");
     const today = new Date();
+    today.setDate(today.getDate() + 1);
     const todayFormatted = formatDate(today);
     const processedEmployeeIds = new Set();
-
+    console.log(today);
     for (const employee of employees) {
       const [statusResult] = await db.query(
         "SELECT status FROM employees WHERE id = ?", 
@@ -839,15 +1018,16 @@ async function accruePL() {
       let lastAccrualDate = pl[0]?.lastAccrualDate ? new Date(pl[0].lastAccrualDate) : accrualStartDate;
       if (isCurrentYearJoiner && lastAccrualDate < joiningDate) {
         lastAccrualDate = joiningDate;
+        await db.query("UPDATE pl_balances SET balance=0 WHERE employeeId=?",[employee.id]);
       }
       else if (lastAccrualDate<janFirstDate){
         lastAccrualDate=janFirstDate;
       }
 
-      console.log(lastAccrualDate);
+      //console.log(lastAccrualDate);
      
       const currentDate = new Date();
-      console.log(currentDate);
+      //console.log(currentDate);
       //const year = currentDate.getFullYear();
       //const month = currentDate.getMonth() + 1; // JavaScript months are 0-based
       //const startOfMonth = `${year}-${month.toString().padStart(2, "0")}-01`;
@@ -902,7 +1082,7 @@ async function accruePL() {
         const endLocal = new Date(today);
         endLocal.setDate(today.getDate() + 1); // Manually add one day
         endLocal.setHours(0, 0, 0, 0);
-        console.log(endLocal); // Reset time to midnight in local time
+        //console.log(endLocal); // Reset time to midnight in local time
         for (let d = new Date(startUTC); d <= endDate; d.setDate(d.getDate() + 1)) {
         const formattedDate = d.toISOString().split("T")[0];
         
@@ -918,9 +1098,23 @@ async function accruePL() {
           }
         });
       }
-
+      const Action=await db.query("SELECT action from pl_update_log WHERE employeeId=?",[employee.id]);
+      console.log(Action);
+      const actiondate=new Date(today.getFullYear(), today.getMonth(), 0);
+      actiondate.setDate(actiondate.getDate() + 1);
+     
+      let presentdate=new Date();
+      
+      if (Array.isArray(Action) && Action.length > 0 && Array.isArray(Action[0]) && Action[0].length > 0) {
+        if (Action[0][0]?.action === 'INSERT') {
+            presentdate = actiondate;
+        }
+    } else {
+    presentdate = today;   
+    }
+      console.log(presentdate);
       //console.log(today);
-      let workingDays = await calculateWorkingDays(lastAccrualDate, today, db);
+      let workingDays = await calculateWorkingDays(lastAccrualDate, presentdate, db);
       console.log(totalLeaveDaysForCurrentMonth);
      // console.log(workingDays);
       workingDays -= totalLeaveDaysForCurrentMonth; // Subtract leave days from working days
@@ -929,16 +1123,27 @@ async function accruePL() {
 
       const accruedPL = Math.floor(workingDays / 20);
       const balance = pl[0]?.balance || 0;
+      presentdate.setDate(presentdate.getDate()-1);
 
       const isDec31 = today.getMonth() === 11 && today.getDate() === 31;
+            
       if (isDec31 && balance > 21) {
         await db.query("UPDATE pl_balances SET balance = 21 WHERE employeeId = ?", [employee.id]);
-      } else if (accruedPL > 0) {
+
+      } else {
         await db.query(
-          "UPDATE pl_balances SET balance = balance + ?, lastAccrualDate = ? WHERE employeeId = ?",
-          [accruedPL, todayFormatted, employee.id]
+          "UPDATE pl_balances SET balance = balance + ?, lastAccrualDate = ?,accruedpl=accruedpl+? WHERE employeeId = ?",
+          [accruedPL, presentdate,accruedPL, employee.id]
         );
       }
+      const balancefetched=await db.query("SELECT balance from pl_balances WHERE employeeId = ?",[employee.id]);
+      if (isDec31 && balance>21){
+        await db.query("UPDATE pl_balances SET carryForward = 21, accruedpl=0 WHERE employeeId = ?", [employee.id]);
+      }
+      else if (isDec31 && balance<=21){
+       await db.query("UPDATE pl_balances SET carryForward = ?, accruedpl=0 WHERE employeeId = ?",[balancefetched,employee.id]);
+      }
+
     }
 
     console.log("PL balances updated successfully.");
@@ -946,6 +1151,7 @@ async function accruePL() {
     console.error("Error updating PL balances:", err);
   }
 }
+
 cron.schedule(
   "59 23 28-31 * *",
   async () => {
@@ -961,6 +1167,35 @@ cron.schedule(
     timezone: "Asia/Kolkata", // Set to your region
   }
 );
+const checkNewPLInsertions = async () => {
+  const [rows] = await db.query("SELECT employeeId FROM pl_update_log WHERE action = 'INSERT'");
+  
+  if (rows.length > 0) {
+    console.log("New employees detected. Running PL accrual...");
+    await accruePL();
+    // Clear log after processing
+    await db.query("DELETE FROM pl_update_log WHERE action = 'INSERT'");
+  }
+};
+app.post("/updates-pl", async (req, res) => {
+  try {
+    console.log("Checking new PL insertions...");
+    await checkNewPLInsertions();
+     res.status(200).json({ message: "PL Balances Updated Successfully" });
+  } catch (error) {
+    console.error("Error updating PL balances:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+{/*
+let isRunning = false;
+cron.schedule("/10 * * * * *", async () => {
+   if (isRunning) return;
+  isRunning = true;
+await accruePL();
+  isRunning = false;
+});*/}
+
 
 {/*cron.schedule(
   "* * * * *",  // Runs every minute (for testing)
@@ -986,7 +1221,9 @@ async function accrueCL() {
   try {
     const [employees] = await db.query("SELECT id, joiningDate FROM employees WHERE status = 'Active'");
     const today = new Date();
-
+    const currentYearJan = new Date(today.getFullYear(), 0, 1);
+    currentYearJan.setDate(currentYearJan.getDate() + 1);
+    console.log(currentYearJan);
     for (const employee of employees) {
       const [statusResult] = await db.query(
         "SELECT status FROM employees WHERE id = ?", 
@@ -1008,22 +1245,40 @@ async function accrueCL() {
       );
 
       let lastAccrualDate = cl[0]?.lastAccrualDate ? new Date(cl[0].lastAccrualDate) : accrualStartDate;
-
-      if (isCurrentYearJoiner && lastAccrualDate < joiningDate) {
-        lastAccrualDate = joiningDate;
+      if (lastAccrualDate.getFullYear() < today.getFullYear()) {
+        lastAccrualDate = currentYearJan;
+        await db.query("UPDATE cl_balances SET balance=0, accruedcl=0 WHERE employeeId=?",[employee.id]);
       }
-     
-
-      const monthsElapsed = calculateMonthsElapsed(lastAccrualDate, today);
-      const accruedCL = (monthsElapsed / 12) * 9;
-
-      if (accruedCL > 0) {
+      else if (isCurrentYearJoiner && lastAccrualDate < joiningDate) {
+        lastAccrualDate = joiningDate;
+        await db.query("UPDATE cl_balances SET balance=0, accruedcl=0 WHERE employeeId=?",[employee.id]);
+      }
+     console.log(lastAccrualDate);
+     const Action=await db.query("SELECT action from cl_update_log WHERE employeeId=?",[employee.id]);
+     const actiondate=new Date(today.getFullYear(), today.getMonth(), 0);
+     actiondate.setDate(actiondate.getDate()+1);
+     let presentdate=new Date();
+     if (Array.isArray(Action) && Action.length > 0 && Array.isArray(Action[0]) && Action[0].length > 0) {
+      if (Action[0][0]?.action === 'INSERT') {
+          presentdate = actiondate;
+      }
+  }
+      else {
+        presentdate=today;
+      }
+      const monthsElapsed = calculateMonthsElapsed(lastAccrualDate, presentdate);
+      console.log(monthsElapsed);
+      const entitlement=await db.query("SELECT cl_entitlement FROM settings WHERE id=1");
+      const VALUE=entitlement[0][0].cl_entitlement;
+      const accruedCL = (monthsElapsed / 12) * VALUE;
+      console.log(`cl accrued:${accruedCL}`);
+       presentdate.setDate(presentdate.getDate()-1);
         await db.query(
-          "UPDATE cl_balances SET balance = balance + ?, lastAccrualDate = ? WHERE employeeId = ?",
-          [accruedCL, today, employee.id]
+          "UPDATE cl_balances SET balance = balance + ?,accruedcl=accruedcl+?, lastAccrualDate = ? WHERE employeeId = ?",
+          [accruedCL,accruedCL, presentdate, employee.id]
         );
         console.log(`CL balance updated for employee ${employee.id}:`, accruedCL);
-      }
+      
     }
 
     console.log("CL balances updated successfully.");
@@ -1031,6 +1286,7 @@ async function accrueCL() {
     console.error("Error updating CL balances:", err);
   }
 }
+
 cron.schedule("59 23 28-31 * *", async () => {
   const today = new Date();
   const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate(); // Get last day of the month
@@ -1043,14 +1299,44 @@ cron.schedule("59 23 28-31 * *", async () => {
   scheduled: true,
   timezone: "Asia/Kolkata" // Change to your timezone
 });
-{/*cron.schedule("* * * * *", async () => { // Runs every minute (FOR TESTING)
+
+const checkNewCLInsertions = async () => {
+  const [rows] = await db.query("SELECT employeeId FROM cl_update_log WHERE action = 'INSERT'");
+  
+  if (rows.length > 0) {
+    console.log("New employees detected. Running CL accrual...");
+    await accrueCL();
+    // Clear log after processing
+    await db.query("DELETE FROM cl_update_log WHERE action = 'INSERT'");
+  }
+};
+
+
+app.post("/updates-cl", async (req, res) => {
+  try {
+    console.log("Checking new CL insertions...");
+    await checkNewCLInsertions();
+    res.status(200).json({ message: "CL Balances Updated Successfully" });
+  } catch (error) {
+    console.error("Error updating CL balances:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+{/*
+let isRuning = false;
+cron.schedule("/10 * * * * *", async () => {
+ await accrueCL();
+});*/}
+
+{/*
+cron.schedule("* * * * *", async () => { // Runs every minute (FOR TESTING)
   console.log(`🕛 Running CL accrual cron job at ${new Date().toISOString()}`);
   await accrueCL();
 }, {
   scheduled: true,
   timezone: "Asia/Kolkata",
-});*/}
-
+});
+*/}
 
 // Start the Express server
 app.listen(port, () => {

@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { CalendarIcon, CheckCircleIcon, AdjustmentsIcon } from "@heroicons/react/outline";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { FaCalendarCheck, FaCalendarTimes } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
-const StatCard = ({ title, value, icon: Icon, bgColor, textColor }) => (
-  <div className={`p-6 rounded-lg shadow-lg bg-gradient-to-r ${bgColor} text-white`}>
-    <div className="flex items-center">
-      <div className={`p-3 rounded-full ${textColor} shadow-lg`}>
-        <Icon className="h-10 w-10 text-white" />
-      </div>
-      <div className="ml-4">
-        <p className="mb-2 text-sm font-medium">{title}</p>
-        <p className="text-xl font-semibold">{value}</p>
-      </div>
-    </div>
-  </div>
-);
 
 const Dashboard = ({ user }) => {
+  // State for leave balances
   const [clBalance, setClBalance] = useState("0 days");
   const [plBalance, setPlBalance] = useState("0 days");
+  const navigate = useNavigate();
+
+  // Accrued & used
+  const [accruedCL, setClAccrued] = useState(0);
+  const [accruedPL, setPlAccrued] = useState(0);
+  const [usedCL, setClUsed] = useState(0);
+  const [usedPL, setPlUsed] = useState(0);
+  const [clEntitlement,setclentitlement]=useState(0);
+  const [carryforwardPL,setcarryforwardPL]=useState(0);
+  // Other state
   const [upcomingHolidays, setUpcomingHolidays] = useState(0);
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper to format date
   const formatDate = (date) => {
     const d = new Date(date);
     const day = String(d.getDate()).padStart(2, '0');
@@ -32,33 +32,53 @@ const Dashboard = ({ user }) => {
     const year = d.getFullYear();
     return `${day}-${month}-${year}`;
   };
-
+  const handleApplyLeave = () => {
+    navigate('/leave-application'); // Redirect with leave type query param
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
         const userInfo = JSON.parse(Cookies.get("userInfo"));
         if (userInfo && userInfo.id) {
-          const balanceResponse = await axios.get(`http://localhost:3000/get-balances/${userInfo.id}`);
+          // 1) Fetch CL & PL balances
+          const balanceResponse = await axios.get(
+            `http://localhost:3000/get-balances/${userInfo.id}`
+          );
           setClBalance(`${balanceResponse.data.clBalance} days`);
           setPlBalance(`${Math.floor(balanceResponse.data.plBalance)} days`);
-
-          const leaveHistoryResponse = await axios.get(`http://localhost:3000/get-leave-history/${userInfo.id}`);
+     
+          // 2) Fetch accrued & used
+          setClAccrued(balanceResponse.data.accruedCL);
+          setPlAccrued(balanceResponse.data.accruedPL);
+          setClUsed(balanceResponse.data.usedCL);
+          setPlUsed(balanceResponse.data.usedPL);
+          setcarryforwardPL(balanceResponse.data.carryForwardPL);
+          setclentitlement(balanceResponse.data.clEntitlement);
+          // 3) Fetch leave history
+          const leaveHistoryResponse = await axios.get(
+            `http://localhost:3000/get-leave-history/${userInfo.id}`
+          );
           const today = new Date();
           const tomorrow = new Date(today);
           tomorrow.setDate(today.getDate() + 1);
 
-          const filteredLeaveHistory = leaveHistoryResponse.data.filter((leave) => {
-            const leaveStartDate = new Date(leave.startDate);
-            return leaveStartDate >= tomorrow || leave.status === "Rejected";
-          }).map((leave) => ({
-            ...leave,
-            formattedStartDate: formatDate(leave.startDate),
-            formattedEndDate: formatDate(leave.endDate),
-          }));
+          const filteredLeaveHistory = leaveHistoryResponse.data
+            .filter((leave) => {
+              const leaveStartDate = new Date(leave.startDate);
+              return leaveStartDate >= tomorrow || leave.status === "Rejected";
+            })
+            .map((leave) => ({
+              ...leave,
+              formattedStartDate: formatDate(leave.startDate),
+              formattedEndDate: formatDate(leave.endDate),
+            }));
 
           setLeaveHistory(filteredLeaveHistory);
 
-          const holidaysResponse = await axios.get("http://localhost:3000/get-upcoming-holidays");
+          // 4) Fetch upcoming holidays
+          const holidaysResponse = await axios.get(
+            "http://localhost:3000/get-upcoming-holidays"
+          );
           setUpcomingHolidays(holidaysResponse.data.upcomingHolidays);
         }
       } catch (err) {
@@ -71,30 +91,7 @@ const Dashboard = ({ user }) => {
     fetchData();
   }, []);
 
-  const stats = [
-    {
-      title: "PL Balance",
-      value: loading ? "Loading..." : plBalance,
-      icon: CheckCircleIcon,
-      bgColor: "from-green-400 to-green-500",
-      textColor: "bg-green-500",
-    },
-    {
-      title: "CL Balance",
-      value: loading ? "Loading..." : clBalance,
-      icon: AdjustmentsIcon,
-      bgColor: "from-blue-400 to-blue-500",
-      textColor: "bg-blue-500",
-    },
-    {
-      title: "Upcoming Holidays",
-      value: loading ? "Loading..." : `${upcomingHolidays}`,
-      icon: CalendarIcon,
-      bgColor: "from-yellow-400 to-yellow-500",
-      textColor: "bg-yellow-500",
-    },
-  ];
-
+  // Render notifications from leave history
   const renderLeaveHistoryAsNotifications = () => {
     return leaveHistory.map((leave) => (
       <li key={leave.id} className="flex items-center space-x-3">
@@ -103,7 +100,8 @@ const Dashboard = ({ user }) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">
-            Your {leave.type} leave request from {leave.formattedStartDate} to {leave.formattedEndDate}.
+            Your {leave.type} leave request from {leave.formattedStartDate} to{" "}
+            {leave.formattedEndDate}.
           </p>
           <p className="text-sm text-gray-500 truncate">{`Status: ${leave.status}`}</p>
         </div>
@@ -111,49 +109,193 @@ const Dashboard = ({ user }) => {
     ));
   };
 
+  // Render content based on user role
   const renderRoleSpecificContent = () => {
     switch (user.role) {
       case "hr":
         return (
           <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">HR Dashboard</h2>
-            <p className="text-gray-600">Welcome to the HR dashboard. Manage employee records and leave requests.</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              HR Dashboard
+            </h2>
+            <p className="text-gray-600">
+              Welcome to the HR dashboard. Manage employee records and leave
+              requests.
+            </p>
           </div>
         );
       case "manager":
         return (
           <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Manager Dashboard</h2>
-            <p className="text-gray-600">Manage and approve leave requests for your team.</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Manager Dashboard
+            </h2>
+            <p className="text-gray-600">
+              Manage and approve leave requests for your team.
+            </p>
           </div>
         );
       default:
         return (
           <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Employee Dashboard</h2>
-            <p className="text-gray-600">View your leave balances, request time off, and check company announcements.</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Employee Dashboard
+            </h2>
+            <p className="text-gray-600">
+              View your leave balances, request time off, and check company
+              announcements.
+            </p>
           </div>
         );
     }
   };
 
+  // Loading / error states
+  if (loading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+      {/* LEAVE CARDS: CASUAL LEAVE (CL) & PRIVILEGED LEAVE (PL) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Casual Leave */}
+        <div className="bg-blue-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 ease-in-out">
+          <div className="flex items-center mb-4">
+            <FaCalendarCheck className="text-blue-600 mr-3" />
+            <h2 className="text-lg font-semibold">Casual Leave</h2>
+          </div>
+          <div className="space-y-2">
+              
+            <table>
+          
+          <tbody>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Annual CL Entitlement</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {clEntitlement} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Used CL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {usedCL} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Accrued CL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {accruedCL} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Remaining CL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {clBalance}
+                      </td>
+                    </tr>
+          </tbody> 
+            
+          </table>
+           
+          </div>
+          <button className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
+           onClick={() => handleApplyLeave()}>
+            Apply
+          </button>
+        </div>
+
+        {/* Privileged Leave */}
+        <div className="bg-green-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 ease-in-out">
+          <div className="flex items-center mb-4">
+            <FaCalendarCheck className="text-green-600 mr-3" />
+            <h2 className="text-lg font-semibold">Paid Leave</h2>
+          </div>
+          <div className="space-y-2">
+            <table>
+            <tbody>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Carry Forward PL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {carryforwardPL} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Used PL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {usedPL} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Accrued PL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {accruedPL} days
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
+                        <strong>Remaining PL</strong>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
+                      <strong>:</strong> {plBalance}
+                      </td>
+                    </tr>
+          </tbody> 
+            
+          </table>
+          </div>
+          <button className="mt-4 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200"
+           onClick={() => handleApplyLeave()}>
+            Apply
+          </button>
+        </div>
       </div>
 
+      {/* Role-Specific Content }
       {renderRoleSpecificContent()}
 
+      {/* Upcoming Holidays */}
       <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Notifications</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Upcoming Holidays
+        </h2>
+        <p className="text-gray-600">{`${upcomingHolidays} holiday(s) coming up!`}</p>
+      </div>
+
+      {/* Recent Notifications */}
+      <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Recent Notifications
+        </h2>
         <ul className="space-y-4">
-          {loading ? (
-            <li className="text-gray-500">Loading notifications...</li>
-          ) : error ? (
-            <li className="text-red-500">Error loading notifications.</li>
+          {leaveHistory.length === 0 ? (
+            <li className="text-gray-500">No notifications.</li>
           ) : (
             renderLeaveHistoryAsNotifications()
           )}
@@ -161,6 +303,6 @@ const Dashboard = ({ user }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;
