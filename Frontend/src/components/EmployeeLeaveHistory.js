@@ -100,7 +100,7 @@ const handleCancelRequest= async (id)=>{
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gradient-to-r from-indigo-100 to-indigo-200 dark:from-indigo-900 dark:to-indigo-800">
           <tr>
-            {["id","EmployeeId", "Name", "Type", "Start Date", "End Date", "Reason", "Total Days", "Status", "Action"].map(header => (
+            {["EmployeeId", "Name", "Type", "Start Date", "End Date", "Reason", "Total Days", "Status", "Action"].map(header => (
               <th
                 key={header}
                 className="text-xs uppercase text-indigo-700 dark:text-indigo-300 tracking-wider px-6 py-3 text-left"
@@ -113,8 +113,6 @@ const handleCancelRequest= async (id)=>{
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
           {currentRecords.map((record) => (
             <tr key={record.id} className="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition-colors">
-              <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{record.id}</td>
-              
               <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{record.employeeId}</td>
               <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{record.name}</td>
               <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{record.type}</td>
