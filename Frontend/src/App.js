@@ -13,6 +13,7 @@ import Reports from './components/Reports';
 import VerifyEmail from "./components/VerifyEmail";
 import EmployeeLeaveHistory from "./components/EmployeeLeaveHistory";
 import UserProfile from "./components/UserProfile"
+
 function App() {
   const [user, setUser] = useState(null);
 

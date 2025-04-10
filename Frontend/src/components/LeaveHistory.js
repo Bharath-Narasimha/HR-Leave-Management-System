@@ -42,49 +42,24 @@ const LeaveHistory = () => {
   }
 
   return (
-    <div className="p-6">
-  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead className="bg-gradient-to-r from-blue-100 to-indigo-200 dark:bg-gray-700">
-        <tr>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            Type
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            Start Date
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            End Date
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            Status
-          </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            Reason
-          </th>
-        </tr>
-      </thead>
-      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+    <div className="p-4 sm:p-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen pb-28">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-6 text-start">
+        Leave History
+      </h2>
+
+      {/* Mobile Layout */}
+      <div className="space-y-6 sm:hidden">
         {leaveHistory.map((leave) => (
-          <tr key={leave.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ease-in-out">
-            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-              {leave.type}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-              {formatDate(leave.startDate)}
-              {leave.startDayType === "Half Day" && (
-                <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
-              )}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-              {formatDate(leave.endDate)}
-              {leave.endDayType === "Half Day" && (
-                <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
-              )}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+          <div
+            key={leave.id}
+            className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-4 border border-gray-200 dark:border-gray-700 backdrop-blur-md bg-opacity-60 dark:bg-opacity-60 transition-all duration-300"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase">
+                {leave.type}
+              </span>
               <span
-                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                className={`text-xs font-medium px-2 py-1 rounded-full ${
                   leave.status === "Approved"
                     ? "bg-green-100 text-green-800"
                     : leave.status === "Rejected"
@@ -94,17 +69,90 @@ const LeaveHistory = () => {
               >
                 {leave.status}
               </span>
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-              {leave.reason}
-            </td>
-          </tr>
+            </div>
+            <div className="text-gray-600 dark:text-gray-300 text-sm mb-1">
+              <strong>Start:</strong> {formatDate(leave.startDate)}{" "}
+              {leave.startDayType === "Half Day" && (
+                <span className="text-xs text-gray-400">(Half Day)</span>
+              )}
+            </div>
+            <div className="text-gray-600 dark:text-gray-300 text-sm mb-1">
+              <strong>End:</strong> {formatDate(leave.endDate)}{" "}
+              {leave.endDayType === "Half Day" && (
+                <span className="text-xs text-gray-400">(Half Day)</span>
+              )}
+            </div>
+            <div className="text-gray-600 dark:text-gray-300 text-sm">
+              <strong>Reason:</strong> {leave.reason}
+            </div>
+          </div>
         ))}
-      </tbody>
-    </table>
-  </div>
-</div>
+      </div>
 
+      {/* Desktop Table Layout */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl shadow-lg bg-white dark:bg-gray-900 backdrop-blur-md bg-opacity-60 dark:bg-opacity-60 border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+          <thead className="bg-gradient-to-r from-indigo-200 to-indigo-300 dark:from-gray-700 dark:to-gray-800">
+            <tr>
+              {["Type", "Start Date", "End Date", "Status", "Reason"].map(
+                (heading) => (
+                  <th
+                    key={heading}
+                    className="px-6 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    {heading}
+                  </th>
+                )
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {leaveHistory.map((leave) => (
+              <tr
+                key={leave.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                <td className="px-6 py-4 whitespace-nowrap font-medium text-indigo-600 dark:text-indigo-400">
+                  {leave.type}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                  {formatDate(leave.startDate)}{" "}
+                  {leave.startDayType === "Half Day" && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      (Half Day)
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                  {formatDate(leave.endDate)}{" "}
+                  {leave.endDayType === "Half Day" && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      (Half Day)
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      leave.status === "Approved"
+                        ? "bg-green-100 text-green-800"
+                        : leave.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {leave.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                  {leave.reason}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 

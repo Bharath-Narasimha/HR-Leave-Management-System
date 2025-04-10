@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-
+import { BriefcaseIcon } from "@heroicons/react/solid";
 const LeaveApplication = () => {
   const [formData, setFormData] = useState({
     leaveType: "",
@@ -167,123 +167,159 @@ const LeaveApplication = () => {
 
   // Disable button if balance is negative
   const isButtonDisabled = (formData.leaveType === "PL" && remainingPL < 0) || (formData.leaveType === "CL" && remainingCL < 0);
-
-  return (
-    <div className="p-6 bg-gradient-to-r from-indigo-100 via-indigo-200 to-indigo-300 rounded-lg shadow-xl">
-  <p className="text-xl font-semibold text-gray-800 mb-6">
-    Applying as: <strong>{employee.firstName} {employee.lastName}</strong>
-  </p>
-  <div className="bg-white p-8 rounded-lg shadow-lg">
-    <form onSubmit={handleSubmit}>
-      <div className="mb-6">
-        <label className="block mb-2 text-sm font-medium text-gray-700">Leave Type</label>
-        <select
-          name="leaveType"
-          value={formData.leaveType}
-          onChange={handleChange}
-          required
-          className="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">Select leave type</option>
-          <option value="CL">Casual Leave</option>
-          <option value="PL">Paid Leave</option>
-        </select>
+  
+return (
+  <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 min-h-screen pb-28">
+    <div className="bg-white/60 backdrop-blur-md rounded-3xl shadow-2xl ring-1 ring-gray-200 overflow-hidden">
+      
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-700 to-indigo-500 px-6 py-6 sm:py-8 flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <div className="bg-white/20 p-2 rounded-full">
+            <BriefcaseIcon className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-white text-2xl font-bold tracking-wide">Leave Application</h2>
+            <p className="text-indigo-100 text-sm mt-1">
+              Applying as: <span className="font-semibold">{employee.firstName} {employee.lastName}</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <label className="block mb-2 text-sm font-medium text-gray-700">Start Date</label>
-        <input
-          type="date"
-          name="startDate"
-          value={formData.startDate}
-          onChange={handleChange}
-          required
-          className="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        {formData.leaveType === "CL" && (
-          <select
-            name="startDayType"
-            value={formData.startDayType}
-            onChange={handleChange}
-            className="mt-2 p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="p-6 sm:p-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Leave Type */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">Leave Type</label>
+              <select
+                name="leaveType"
+                value={formData.leaveType}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800"
+              >
+                <option value="">Select leave type</option>
+                <option value="CL">Casual Leave</option>
+                <option value="PL">Paid Leave</option>
+              </select>
+            </div>
+
+            {/* Reason */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">Reason</label>
+              <textarea
+                name="reason"
+                value={formData.reason}
+                onChange={handleChange}
+                rows={4}
+                required
+                className="w-full border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800 resize-none"
+                placeholder="Please provide the reason for your leave request"
+              />
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Dates */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Start Date */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">Start Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800"
+                />
+                {formData.leaveType === "CL" && (
+                  <select
+                    name="startDayType"
+                    value={formData.startDayType}
+                    onChange={handleChange}
+                    className="w-full mt-2 border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800"
+                  >
+                    <option value="Full Day">Full Day</option>
+                    <option value="Half Day">Half Day</option>
+                  </select>
+                )}
+              </div>
+
+              {/* End Date */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">End Date</label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800"
+                />
+                {formData.leaveType === "CL" && (
+                  <select
+                    name="endDayType"
+                    value={formData.endDayType}
+                    onChange={handleChange}
+                    className="w-full mt-2 border border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-800"
+                  >
+                    <option value="Full Day">Full Day</option>
+                    <option value="Half Day">Half Day</option>
+                  </select>
+                )}
+              </div>
+            </div>
+
+            {/* Summary */}
+            {formData.leaveType && (
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-inner">
+                <h3 className="font-semibold text-indigo-700 mb-2">Leave Summary</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-indigo-500">Total Days</p>
+                    <p className="font-bold text-indigo-800">{totalLeaveDays} days</p>
+                  </div>
+                  <div>
+                    <p className="text-indigo-500">Remaining</p>
+                    <p className={`font-bold ${negativeBalanceClass(formData.leaveType === 'CL' ? remainingCL : remainingPL)}`}>
+                      {formData.leaveType === "CL" ? remainingCL : remainingPL} days
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="mt-10">
+          <button
+            type="submit"
+            disabled={isButtonDisabled}
+            className={`w-full py-3 px-5 rounded-xl text-white font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isButtonDisabled 
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+            }`}
           >
-            <option value="Full Day">Full Day</option>
-            <option value="Half Day">Half Day</option>
-          </select>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <label className="block mb-2 text-sm font-medium text-gray-700">End Date</label>
-        <input
-          type="date"
-          name="endDate"
-          value={formData.endDate}
-          onChange={handleChange}
-          required
-          className="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        {formData.leaveType === "CL" && (
-          <select
-            name="endDayType"
-            value={formData.endDayType}
-            onChange={handleChange}
-            className="mt-2 p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="Full Day">Full Day</option>
-            <option value="Half Day">Half Day</option>
-          </select>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <label className="block mb-2 text-sm font-medium text-gray-700">Reason</label>
-        <textarea
-          name="reason"
-          value={formData.reason}
-          onChange={handleChange}
-          rows="2"
-          required
-          className="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-
-      <p className="mb-4 text-sm font-semibold text-gray-700">Total Leave Days: {totalLeaveDays}</p>
-
-      {formData.leaveType === "PL" && (
-        <>
-          <p className={`mb-4 text-sm font-semibold ${negativeBalanceClass(remainingPL)}`}>
-            Remaining PL: {remainingPL}
-          </p>
-          <p className={`mb-4 text-sm font-semibold ${negativeBalanceClass(leaveBalances.plBalance)}`}>
-            PL Balance: {leaveBalances.plBalance}
-          </p>
-        </>
-      )}
-
-      {formData.leaveType === "CL" && (
-        <>
-          <p className={`mb-4 text-sm font-semibold ${negativeBalanceClass(remainingCL)}`}>
-            Remaining CL: {remainingCL}
-          </p>
-          <p className={`mb-4 text-sm font-semibold ${negativeBalanceClass(leaveBalances.clBalance)}`}>
-            CL Balance: {leaveBalances.clBalance}
-          </p>
-        </>
-      )}
-
-      <button
-        type="submit"
-        className={`w-full p-3 rounded-lg text-white text-sm font-semibold ${isButtonDisabled ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-indigo-500 transition duration-200"}`}
-        disabled={isButtonDisabled}
-      >
-        {isButtonDisabled ? "Leave cannot be applied due to low balance" : "Submit Leave Request"}
-      </button>
-    </form>
+            {isButtonDisabled 
+              ? "Insufficient Leave Balance" 
+              : "Submit Leave Request"}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
-
-  );
+);
+  
+  
 };
 
 export default LeaveApplication;

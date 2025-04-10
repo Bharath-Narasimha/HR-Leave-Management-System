@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { UserCircleIcon } from "@heroicons/react/solid";
+//import { UserCircleIcon } from "@heroicons/react/solid";
 import axios from "axios";
-
+import { UserCircleIcon } from 'lucide-react';
 const UserProfile = ({ user, onUpdateUser }) => {
   const [profileData, setProfileData] = useState({
     name: "",
@@ -50,34 +50,36 @@ const UserProfile = ({ user, onUpdateUser }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-100 py-6">
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg transform hover:scale-100 transition duration-300 ease-in-out">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-4 text-center tracking-wide">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-indigo-600 p-6">
+        <h2 className="text-2xl font-bold text-white text-center">
           User Profile
         </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex justify-center mb-5">
-            {profileData.profileImage ? (
-              <img
-                src={profileData.profileImage || "/placeholder.svg"}
-                alt="Profile"
-                className="h-32 w-32 rounded-full border-4 border-gray-300 shadow-md"
-              />
-            ) : (
-              <UserCircleIcon className="h-32 w-32 text-gray-400 bg-gray-100 p-3 rounded-full shadow-md" />
-            )}
+      </div>
+      
+      <div className="relative -mt-12 flex justify-center">
+        {profileData.profileImage ? (
+          <img
+            src={profileData.profileImage || "/placeholder.svg"}
+            alt="Profile"
+            className="h-24 w-24 rounded-full border-4 border-white shadow-md object-cover"
+          />
+        ) : (
+          <div className="h-24 w-24 rounded-full border-4 border-white bg-white shadow-md flex items-center justify-center">
+            <UserCircleIcon className="h-20 w-20 text-indigo-300" />
           </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-600" htmlFor="email">
-              Email
-            </label>
-            <p className="text-xl text-gray-800 font-medium">{profileData.email}</p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-600" htmlFor="joiningDate">
+        )}
+      </div>
+      
+      <form onSubmit={handleSubmit} className="p-6 pt-4">
+        <div className="mb-6 text-center">
+          <p className="text-lg text-gray-800 font-medium">{profileData.email}</p>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="joiningDate">
               Joining Date
             </label>
             <input
@@ -86,12 +88,12 @@ const UserProfile = ({ user, onUpdateUser }) => {
               name="joiningDate"
               value={profileData.joiningDate}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 focus:ring-indigo-600 focus:border-indigo-600 shadow-md p-3 text-gray-800"
+              className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-3 text-gray-700 text-sm"
             />
           </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-600" htmlFor="designation">
+          
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="designation">
               Designation
             </label>
             <input
@@ -100,12 +102,12 @@ const UserProfile = ({ user, onUpdateUser }) => {
               name="designation"
               value={profileData.designation}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 focus:ring-indigo-600 focus:border-indigo-600 shadow-md p-3 text-gray-800"
+              className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-3 text-gray-700 text-sm"
             />
           </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-600" htmlFor="department">
+          
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="department">
               Department
             </label>
             <input
@@ -114,21 +116,22 @@ const UserProfile = ({ user, onUpdateUser }) => {
               name="department"
               value={profileData.department}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-2 border-gray-300 focus:ring-indigo-600 focus:border-indigo-600 shadow-md p-3 text-gray-800"
+              className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-3 text-gray-700 text-sm"
             />
           </div>
-
-          <div className="mt-5">
-            <button
-              type="submit"
-              className="w-full py-3 px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 shadow-md transition duration-200 ease-in-out"
-            >
-              Update Profile
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+        
+        <div className="mt-8">
+          <button
+            type="submit"
+            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow transition duration-200 ease-in-out flex items-center justify-center"
+          >
+            Update Profile
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
   );
 };
 

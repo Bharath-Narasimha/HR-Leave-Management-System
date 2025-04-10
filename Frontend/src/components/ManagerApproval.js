@@ -8,7 +8,12 @@ const formatDate = (dateString) => {
   const year = date.getFullYear();
   return `${day}/${month}/${year}`; // Change this to your desired format
 };
-
+const Detail = ({ label, value }) => (
+  <div className="text-sm">
+    <div className="text-gray-500 dark:text-gray-400 font-semibold">{label}</div>
+    <div className="text-gray-800 dark:text-gray-100">{value}</div>
+  </div>
+);
 const ManagerApproval = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -109,166 +114,215 @@ const ManagerApproval = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gradient-to-r from-blue-100 to-indigo-200 dark:bg-gray-700">
+    <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+     <div className="sm:p-6 dark:bg-gray-900 min-h-screen">
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-start">Leave Requests</h2>
+
+      {/* Mobile Layout - Card View */}
+      <div className="space-y-4 lg:hidden">
+        {leaveRequests.length === 0 && (
+          <div className="text-center text-gray-500 dark:text-gray-400 py-6">No leave requests found.</div>
+        )}
+        {leaveRequests.map((request) => (
+          <div
+            key={request.id}
+            className="bg-blue-50 dark:bg-gray-800 border border-blue-100 dark:border-gray-700 rounded-xl shadow p-4"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{request.name}</h3>
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full
+                ${request.status === 'Pending' ? 'bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                  request.status === 'Approved' ? 'bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                  'bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300'}`}>
+                {request.status}
+              </span>
+            </div>
+            <div className="text-sm text-gray-700 dark:text-gray-300">
+              <p><strong>Type:</strong> {request.type}</p>
+              <p>
+                <strong>From:</strong> {formatDate(request.startDate)}
+                {request.startDayType === 'Half Day' && <span className="text-xs text-gray-500 ml-1">(Half Day)</span>}
+              </p>
+              <p>
+                <strong>To:</strong> {formatDate(request.endDate)}
+                {request.endDayType === 'Half Day' && <span className="text-xs text-gray-500 ml-1">(Half Day)</span>}
+              </p>
+            </div>
+            <div className="mt-3 flex justify-end space-x-2">
+              <button
+                onClick={() => handleView(request)}
+                className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-md text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+              >
+                View
+              </button>
+              <button
+                onClick={() => handleApprove(request.id)}
+                className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-md text-sm font-medium hover:bg-green-200 dark:hover:bg-green-800 transition"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => handleReject(request.id)}
+                className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-md text-sm font-medium hover:bg-red-200 dark:hover:bg-red-800 transition"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Layout - Table View */}
+      <div className="hidden lg:block overflow-x-auto">
+        <table className="min-w-full text-sm text-left border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl overflow-hidden">
+          <thead className="bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 uppercase text-xs font-bold tracking-wider">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Employee
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Type
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Start Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                End Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-6 py-4">Name</th>
+              <th className="px-6 py-4">Type</th>
+              <th className="px-6 py-4">Start Date</th>
+              <th className="px-6 py-4">End Date</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {leaveRequests.map((request) => (
-              <tr key={request.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 ease-in-out">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  {request.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                  {request.type}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+              <tr key={request.id} className="hover:bg-blue-50 dark:hover:bg-gray-800 transition">
+                <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{request.name}</td>
+                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{request.type}</td>
+                <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                   {formatDate(request.startDate)}
-                  {request.startDayType === "Half Day" && (
-                    <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
+                  {request.startDayType === 'Half Day' && (
+                    <span className="text-xs text-gray-500 ml-1">(Half Day)</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                   {formatDate(request.endDate)}
-                  {request.endDayType === "Half Day" && (
-                    <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
+                  {request.endDayType === 'Half Day' && (
+                    <span className="text-xs text-gray-500 ml-1">(Half Day)</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium
+                    ${request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                      request.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}
+                  `}>
+                    {request.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center space-x-2">
                   <button
-                    onClick={() => handleView(request)} // Trigger view and fetch balances
-                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4 transition-all duration-200 ease-in-out"
+                    onClick={() => handleView(request)}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-md text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition"
                   >
                     View
                   </button>
                   <button
                     onClick={() => handleApprove(request.id)}
-                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-4 transition-all duration-200 ease-in-out"
+                    className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-md text-sm font-medium hover:bg-green-200 dark:hover:bg-green-800 transition"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => handleReject(request.id)}
-                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 ease-in-out"
+                    className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-md text-sm font-medium hover:bg-red-200 dark:hover:bg-red-800 transition"
                   >
                     Reject
                   </button>
                 </td>
               </tr>
             ))}
+            {leaveRequests.length === 0 && (
+              <tr>
+                <td colSpan="6" className="text-center text-gray-500 dark:text-gray-400 py-6">
+                  No leave requests found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+    </div>
 
       {/* Modal View - Enhanced */}
       {selectedRequest && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="my-modal">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                {selectedRequest.name}'s Leave Request
-              </h3>
-              <div className="mt-2">
-                <table className="min-w-full table-auto">
-                  <tbody>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Type:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {selectedRequest.type}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Start Date:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {formatDate(selectedRequest.startDate)}
-                        {selectedRequest.startDayType === "Half Day" && (
-                          <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>End Date:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {formatDate(selectedRequest.endDate)}
-                        {selectedRequest.endDayType === "Half Day" && (
-                          <span className="ml-2 text-xs text-gray-400">(Half Day)</span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Reason:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {selectedRequest.reason}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Total Leave Days:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {selectedRequest.totalLeaveDays}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>{selectedRequest.type === 'PL' ? 'Paid Leave' : 'Casual Leave'} Balance:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {selectedRequest.type === 'PL' ? plBalance : clBalance}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Remaining {selectedRequest.type === 'PL' ? 'Paid Leave' : 'Casual Leave'}:</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                        {selectedRequest.type === 'PL'
-                          ? plBalance - selectedRequest.totalLeaveDays
-                          : clBalance - selectedRequest.totalLeaveDays}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="items-center px-4 py-3">
-                <button
-                  id="ok-btn"
-                  className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200 ease-in-out"
-                  onClick={() => setSelectedRequest(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div className="relative w-full max-w-lg rounded-2xl shadow-xl bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-all duration-300 ease-in-out animate-fade-in">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2"
+            viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M8 7V3m8 4V3M3 11h18M5 19h14a2 2 0 002-2v-5H3v5a2 2 0 002 2z" />
+          </svg>
+          {selectedRequest.name}'s Leave Request
+        </h2>
+        <button
+          onClick={() => setSelectedRequest(null)}
+          className="text-gray-400 hover:text-red-500 transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Detail label="Type" value={selectedRequest.type} />
+          <Detail
+            label="Total Leave Days"
+            value={selectedRequest.totalLeaveDays}
+          />
+          <Detail
+            label="Start Date"
+            value={
+              <>
+                {formatDate(selectedRequest.startDate)}
+                {selectedRequest.startDayType === "Half Day" && (
+                  <span className="ml-1 text-xs text-gray-400">(Half Day)</span>
+                )}
+              </>
+            }
+          />
+          <Detail
+            label="End Date"
+            value={
+              <>
+                {formatDate(selectedRequest.endDate)}
+                {selectedRequest.endDayType === "Half Day" && (
+                  <span className="ml-1 text-xs text-gray-400">(Half Day)</span>
+                )}
+              </>
+            }
+          />
+          <Detail label="Reason" value={selectedRequest.reason} />
+          <Detail
+            label={`${selectedRequest.type === "PL" ? "Paid Leave" : "Casual Leave"} Balance`}
+            value={selectedRequest.type === "PL" ? plBalance : clBalance}
+          />
+          <Detail
+            label={`Remaining ${selectedRequest.type === "PL" ? "Paid Leave" : "Casual Leave"}`}
+            value={
+              selectedRequest.type === "PL"
+                ? plBalance - selectedRequest.totalLeaveDays
+                : clBalance - selectedRequest.totalLeaveDays
+            }
+          />
         </div>
-      )}
+      </div>
+
+      <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+        <button
+          onClick={() => setSelectedRequest(null)}
+          className="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-150"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

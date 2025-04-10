@@ -86,7 +86,7 @@ app.post('/register', async (req, res) => {
     </p>
     <hr>
     <div style="text-align: center; font-size: 12px; color: #999;">
-      &copy; 2025 [Your Company]. All rights reserved.  
+      &copy; 2025 Unique School App. All rights reserved.  
       <br>1234 Your Street, Your City, Country | Contact: support@yourcompany.com  
     </div>
   </div>
@@ -869,6 +869,32 @@ app.get("/leaves/all", async (req, res) => {
   } catch (error) {
       console.error("❌ Error fetching leave history:", error);
       res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+app.delete("/delete-leave-record/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [leaverequest]=await db.query("select * FROM leavehistory WHERE id = ?", [id]);
+    if (leaverequest.length===0){
+      return res.status(404).json({ message: 'Leave request not found' });
+    }
+    const leave=leaverequest[0];
+    if (leave.status==='Rejected'){
+      return res.status(400).json({message:'Cannot cancel rejected leave'});
+    }
+    if (leave.type==='PL'){
+      await db.query(`UPDATE pl_balances SET balance = balance + ? WHERE employeeId = ?`, [leave.totalLeaveDays, leave.employeeId]);
+    }
+    else if (leave.type==='CL'){
+      await db.query(`UPDATE cl_balances SET balance = balance + ? WHERE employeeId = ?`,
+        [leave.totalLeaveDays, leave.employeeId]);
+    }
+    await db.query(`DELETE FROM leavehistory WHERE id=?`, [id]);
+    res.status(200).json({ message: 'Leave request cancelled successfully' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 app.get('/leave-balances', async (req, res) => {

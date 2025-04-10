@@ -168,134 +168,93 @@ const Dashboard = ({ user }) => {
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      {/* LEAVE CARDS: CASUAL LEAVE (CL) & PRIVILEGED LEAVE (PL) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Casual Leave */}
-        <div className="bg-blue-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 ease-in-out">
-          <div className="flex items-center mb-4">
-            <FaCalendarCheck className="text-blue-600 mr-3" />
-            <h2 className="text-lg font-semibold">Casual Leave</h2>
+    <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 min-h-screen pb-28">
+      {/* Leave Overview Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Casual Leave Card */}
+        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-5 rounded-t-2xl">
+            <h2 className="text-2xl font-bold tracking-wide">Casual Leave</h2>
           </div>
-          <div className="space-y-2">
-              
-            <table>
-          
-          <tbody>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Annual CL Entitlement</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {clEntitlement} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Used CL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {usedCL} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Accrued CL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {accruedCL} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Remaining CL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {clBalance}
-                      </td>
-                    </tr>
-          </tbody> 
-            
-          </table>
-           
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Annual Entitlement</p>
+                <p className="text-xl font-semibold">{clEntitlement} days</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Used Leave</p>
+                <p className="text-xl font-semibold">{usedCL} days</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Accrued Leave</p>
+                <p className="text-xl font-semibold">{accruedCL} days</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Remaining Balance</p>
+                <p className="text-xl font-semibold text-blue-600">{clBalance}</p>
+              </div>
+            </div>
+            <button 
+              className="w-full py-3 mt-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md"
+              onClick={() => handleApplyLeave()}
+            >
+              Apply Leave
+            </button>
           </div>
-          <button className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
-           onClick={() => handleApplyLeave()}>
-            Apply
-          </button>
         </div>
-
-        {/* Privileged Leave */}
-        <div className="bg-green-100 p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 ease-in-out">
-          <div className="flex items-center mb-4">
-            <FaCalendarCheck className="text-green-600 mr-3" />
-            <h2 className="text-lg font-semibold">Paid Leave</h2>
+  
+        {/* Paid Leave Card */}
+        <div className="bg-white rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-gradient-to-r from-green-600 to-green-400 text-white p-5 rounded-t-2xl">
+            <h2 className="text-2xl font-bold tracking-wide">Paid Leave</h2>
           </div>
-          <div className="space-y-2">
-            <table>
-            <tbody>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Carry Forward PL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {carryforwardPL} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Used PL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {usedPL} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Accrued PL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {accruedPL} days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-300 font-medium text-left">
-                        <strong>Remaining PL</strong>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 text-left">
-                      <strong>:</strong> {plBalance}
-                      </td>
-                    </tr>
-          </tbody> 
-            
-          </table>
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Carry Forward PL</p>
+                <p className="text-xl font-semibold">{carryforwardPL} days</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Used PL</p>
+                <p className="text-xl font-semibold">{usedPL} days</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Accrued PL</p>
+                <p className="text-xl font-semibold">{accruedPL} days</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-sm text-gray-600">Remaining Balance</p>
+                <p className="text-xl font-semibold text-green-600">{plBalance}</p>
+              </div>
+            </div>
+            <button 
+              className="w-full py-3 mt-4 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200 shadow-md"
+              onClick={() => handleApplyLeave()}
+            >
+              Apply Leave
+            </button>
           </div>
-          <button className="mt-4 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200"
-           onClick={() => handleApplyLeave()}>
-            Apply
-          </button>
         </div>
       </div>
-
-      {/* Role-Specific Content }
-      {renderRoleSpecificContent()}
-
+  
+      {/* Role Specific Content */}
+      <div className="mt-10">
+        {renderRoleSpecificContent()}
+      </div>
+  
       {/* Upcoming Holidays */}
-      <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Upcoming Holidays
-        </h2>
-        <p className="text-gray-600">{`${upcomingHolidays} holiday(s) coming up!`}</p>
+      <div className="mt-10 bg-white rounded-2xl shadow-lg p-6 border border-yellow-100">
+        <h2 className="text-2xl font-semibold text-yellow-600 mb-2">Upcoming Holidays</h2>
+        <p className="text-gray-700 text-lg">{`${upcomingHolidays} holiday(s) coming up!`}</p>
       </div>
-
-      {/* Recent Notifications */}
-      <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Recent Notifications
-        </h2>
-        <ul className="space-y-4">
+  
+      {/* Notifications */}
+      <div className="mt-6 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Recent Notifications</h2>
+        <ul className="space-y-3">
           {leaveHistory.length === 0 ? (
-            <li className="text-gray-500">No notifications.</li>
+            <li className="text-gray-500 italic">No notifications.</li>
           ) : (
             renderLeaveHistoryAsNotifications()
           )}
@@ -303,6 +262,7 @@ const Dashboard = ({ user }) => {
       </div>
     </div>
   );
+  
 }
 
 export default Dashboard;

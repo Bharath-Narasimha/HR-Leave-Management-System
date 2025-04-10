@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon, TrashIcon } from "@heroicons/react/outline";
 import { CalendarIcon } from "@heroicons/react/solid"; // You can use a calendar icon
-
+import { Plus, Trash2, Calendar } from "lucide-react";
 const PublicHolidays = ({ userRole }) => {
   const [holidays, setHolidays] = useState([]);
   const [newHoliday, setNewHoliday] = useState({ date: "", name: "" });
@@ -58,6 +58,14 @@ const PublicHolidays = ({ userRole }) => {
       console.error("Error adding holiday:", error);
     }
   };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
 
   // Delete a holiday from the database
   const handleDeleteHoliday = async (id) => {
@@ -76,73 +84,149 @@ const PublicHolidays = ({ userRole }) => {
       console.error("Error deleting holiday:", error);
     }
   };
+  const today = new Date();
+  const upcoming = holidays.filter((h) => new Date(h.date) >= today);
+  const past = holidays.filter((h) => new Date(h.date) < today);
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        {userRole === "hr" && (
-          <form onSubmit={handleAddHoliday} className="mb-6 flex flex-col space-y-4">
-            <div className="flex items-center space-x-4">
+    <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 min-h-screen pb-28">
+      <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
+
+        {/* Sticky Header */}
+        <div className="bg-indigo-600 text-white px-6 py-4 flex items-center justify-between shadow-md sticky top-0 z-10">
+          <div>
+            <h2 className="text-xl font-bold">Company Holidays</h2>
+            <p className="text-sm text-indigo-200">{holidays.length} holidays listed</p>
+          </div>
+          {userRole === "hr" && (
+            <form onSubmit={handleAddHoliday} className="hidden md:flex items-center gap-2">
               <input
                 type="date"
                 name="date"
                 value={newHoliday.date}
                 onChange={handleInputChange}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 required
+                className="px-2 py-1.5 rounded-md border bg-white text-gray-800 text-sm focus:ring-2 ring-indigo-400"
               />
               <input
                 type="text"
                 name="name"
                 value={newHoliday.name}
                 onChange={handleInputChange}
-                placeholder="Holiday Name"
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 required
+                placeholder="Holiday Name"
+                className="px-2 py-1.5 rounded-md border bg-white text-gray-800 text-sm focus:ring-2 ring-indigo-400"
               />
               <button
                 type="submit"
-                className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition-all duration-200"
+                className="bg-white text-indigo-600 hover:bg-indigo-100 transition px-3 py-1.5 rounded-md font-semibold"
               >
-                <PlusIcon className="h-6 w-6" />
+                <Plus size={16} />
               </button>
-            </div>
-          </form>
+            </form>
+          )}
+        </div>
+
+        {/* HR Mobile Form */}
+        {userRole === "hr" && (
+          <div className="md:hidden px-4 py-4 bg-indigo-50 border-b">
+            <form onSubmit={handleAddHoliday} className="space-y-2">
+              <input
+                type="date"
+                name="date"
+                value={newHoliday.date}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 ring-indigo-500"
+              />
+              <input
+                type="text"
+                name="name"
+                value={newHoliday.name}
+                onChange={handleInputChange}
+                required
+                placeholder="Holiday Name"
+                className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 ring-indigo-500"
+              />
+              <button
+                type="submit"
+                className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+              >
+                Add Holiday
+              </button>
+            </form>
+          </div>
         )}
-        <ul className="space-y-6">
-          {holidays.map((holiday) => (
-            <li
-              key={holiday.id}
-              className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl"
-            >
-              <div className="flex items-center space-x-4">
-                <CalendarIcon className="h-6 w-6 text-blue-500 dark:text-blue-400" />
-                <div className="flex space-x-4 items-center">
-                  <input
-                    type="date"
-                    value={holiday.date ? holiday.date.split("T")[0] : ""}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                    disabled
-                  />
-                  <input
-                    type="text"
-                    value={holiday.name}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                    disabled
-                  />
-                </div>
-              </div>
-              {userRole === "hr" && (
-                <button
-                  onClick={() => handleDeleteHoliday(holiday.id)}
-                  className="ml-4 p-2 text-red-600 hover:text-red-800 transition-all duration-200"
+
+        {/* Section: Upcoming Holidays */}
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-indigo-700 mb-2">Upcoming Holidays</h3>
+          {upcoming.length > 0 ? (
+            <ul className="space-y-3">
+              {upcoming.map((holiday) => (
+                <li
+                  key={holiday.id}
+                  className="flex items-center justify-between bg-indigo-50 px-4 py-3 rounded-lg border hover:shadow transition"
                 >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-indigo-100 rounded-full">
+                      <Calendar className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-indigo-800">{holiday.name}</p>
+                      <p className="text-sm text-indigo-500">{formatDate(holiday.date)}</p>
+                    </div>
+                  </div>
+                  {userRole === "hr" && (
+                    <button
+                      onClick={() => handleDeleteHoliday(holiday.id)}
+                      className="p-2 rounded-full hover:bg-red-100 text-red-600 transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">No upcoming holidays.</p>
+          )}
+        </div>
+
+        {/* Section: Past Holidays */}
+        <div className="px-4 pb-5 pt-2">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Past Holidays</h3>
+          {past.length > 0 ? (
+            <ul className="space-y-3">
+              {past.map((holiday) => (
+                <li
+                  key={holiday.id}
+                  className="flex items-center justify-between px-4 py-3 bg-gray-50 border rounded-lg"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-gray-200 rounded-full">
+                      <Calendar className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">{holiday.name}</p>
+                      <p className="text-sm text-gray-500">{formatDate(holiday.date)}</p>
+                    </div>
+                  </div>
+                  {userRole === "hr" && (
+                    <button
+                      onClick={() => handleDeleteHoliday(holiday.id)}
+                      className="p-2 rounded-full hover:bg-red-100 text-red-600 transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">No past holidays.</p>
+          )}
+        </div>
       </div>
     </div>
   );
